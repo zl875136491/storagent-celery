@@ -42,6 +42,12 @@ def reconcile_replication_policies(self):
   return _run(reconcile_replication_policies_task(single_pass=True))
 
 
+@app.task(bind=True, name="storagent.public.refresh_quota_aggregates", autoretry_for=(Exception,), retry_backoff=True, retry_kwargs={"max_retries": 5})
+def refresh_quota_aggregates(self):
+  from src.modules.public.service import refresh_application_quota_aggregates_once
+  return _run(refresh_application_quota_aggregates_once())
+
+
 @app.task(bind=True, name="storagent.capacity.snapshot", autoretry_for=(Exception,), retry_backoff=True, retry_kwargs={"max_retries": 5})
 def capacity_snapshot(self):
   from src.modules.capacity.service import collect_snapshot

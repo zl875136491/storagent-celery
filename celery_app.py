@@ -49,6 +49,7 @@ app.conf.update(
     "storagent.archive-expired-objects": {"task": "storagent.files.archive_expired_objects", "schedule": float(os.getenv("OBJECT_ARCHIVE_INTERVAL_SECONDS", "300"))},
     "storagent.etcd-reconcile": {"task": "storagent.etcd.reconcile", "schedule": float(os.getenv("SYNC_RECONCILE_INTERVAL_SECONDS", "30"))},
     "storagent.replication-reconcile": {"task": "storagent.replication.reconcile_policies", "schedule": float(os.getenv("REPLICATION_RECONCILE_INTERVAL_SECONDS", "300"))},
+    "storagent.quota-aggregate-refresh": {"task": "storagent.public.refresh_quota_aggregates", "schedule": float(os.getenv("APPLICATION_QUOTA_AGGREGATE_INTERVAL_SECONDS", "3600"))},
     "storagent.capacity-snapshot": {"task": "storagent.capacity.snapshot", "schedule": float(os.getenv("CAPACITY_SNAPSHOT_INTERVAL_SECONDS", "3600"))},
     "storagent.cluster-health": {"task": "storagent.storage.monitor_cluster_health", "schedule": float(os.getenv("CLUSTER_HEALTH_CHECK_INTERVAL_SECONDS", "120"))},
   },
