@@ -26,7 +26,7 @@ RUN python -m pip install --no-cache-dir --disable-pip-version-check --index-url
 COPY backend/storagent/src ./backend/storagent/src
 COPY backend/storagent/__init__.py ./backend/storagent/__init__.py
 COPY backend/storagent/runtimes/mc /usr/local/bin/mc
-COPY worker/storagent-celery/celery_app.py worker/storagent-celery/tasks.py worker/storagent-celery/observability.py worker/storagent-celery/worker.sh ./
+COPY worker/storagent-celery/celery_app.py worker/storagent-celery/tasks.py worker/storagent-celery/task_runtime.py worker/storagent-celery/scheduler.py worker/storagent-celery/observability.py worker/storagent-celery/worker.sh ./
 RUN chmod 0755 ./worker.sh /usr/local/bin/mc && chown -R storagent:storagent /app
 
 USER storagent:storagent
