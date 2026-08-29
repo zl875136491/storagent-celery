@@ -2,6 +2,21 @@
 
 The worker executes Storagent background tasks. It is deployed with the Backend source tree and must use the same Region, Celery broker, queue prefix, and task protocol as the API instances in that Region.
 
+## Repository Relationship
+
+Storagent is delivered through three independently versioned repositories. Its request and task lifecycle is: `Frontend -> Backend -> Celery Worker -> Backend -> Frontend`.
+
+| Repository | Responsibility | Relationship to the other repositories |
+| --- | --- | --- |
+| Backend | Provides APIs, authentication, business orchestration, and asynchronous operation intake. | Receives management and query requests from Frontend; publishes regional tasks to Celery Worker; exposes task state and results to Frontend. |
+| Frontend | Provides the browser-based management console. | Calls Backend versioned APIs to perform operations and queries, then presents asynchronous task progress. |
+| Celery Worker (this repository) | Executes archival, quota aggregation, capacity snapshots, and storage operations in the background. | Consumes Backend tasks for its Region and persists execution state and results for Backend and Frontend to query. |
+
+Related repositories:
+
+- [Storagent Backend](https://github.com/zl875136491/storagent)
+- [Storagent Frontend](https://github.com/zl875136491/storagent-frontend)
+
 ## Required Configuration
 
 ```dotenv
