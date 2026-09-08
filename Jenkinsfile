@@ -85,12 +85,15 @@ pipeline {
                     set -Eeuo pipefail
                     docker run --rm --platform linux/amd64 \
                       --volume "$WORKSPACE:/workspace:ro" --workdir /workspace \
+                      --env PYTHONDONTWRITEBYTECODE=1 \
                       --env PIP_DISABLE_PIP_VERSION_CHECK=1 --env "PIP_INDEX_URL=$PYPI_INDEX_URL" \
                       "$TEST_IMAGE" bash -c '
                         set -Eeuo pipefail
                         python -m pip install --no-cache-dir -r worker/storagent-celery/requirements.txt
                         python -m pip install --no-cache-dir -r backend/storagent/requirements.txt
-                        python -m compileall -q backend/storagent/src worker/storagent-celery
+                        mkdir -p /tmp/syntax-check
+                        cp -a worker/storagent-celery backend/storagent /tmp/syntax-check/
+                        python -m compileall -q /tmp/syntax-check/storagent-celery /tmp/syntax-check/storagent/src
                         CELERY_BROKER_URL=mongodb://localhost/storagent_celery \
                         PYTHONPATH=/workspace/worker/storagent-celery:/workspace/backend/storagent \
                         python -c \
