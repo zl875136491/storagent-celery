@@ -99,8 +99,7 @@ pipeline {
                         cp -a worker/storagent-celery backend/storagent /tmp/syntax-check/
                         python -m compileall -q /tmp/syntax-check/storagent-celery /tmp/syntax-check/storagent/src
                         PYTHONPATH=/workspace/worker/storagent-celery:/workspace/backend/storagent \
-                        python -c \
-                          "from celery_app import app; assert app.conf.task_track_started; assert app.conf.broker_transport_options[\"messages_collection\"] == \"celery.messages\""
+                        python /workspace/worker/storagent-celery/smoke_import.py
                       '
                 '''
             }
