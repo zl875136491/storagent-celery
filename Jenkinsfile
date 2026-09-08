@@ -94,6 +94,7 @@ pipeline {
                         mkdir -p /tmp/syntax-check
                         cp -a worker/storagent-celery backend/storagent /tmp/syntax-check/
                         python -m compileall -q /tmp/syntax-check/storagent-celery /tmp/syntax-check/storagent/src
+                        REGION=beijing \
                         CELERY_BROKER_URL=mongodb://localhost/storagent_celery \
                         PYTHONPATH=/workspace/worker/storagent-celery:/workspace/backend/storagent \
                         python -c \
