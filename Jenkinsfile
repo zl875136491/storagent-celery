@@ -83,10 +83,14 @@ pipeline {
             steps {
                 sh '''#!/usr/bin/env bash
                     set -Eeuo pipefail
+                    # REGION/CELERY_BROKER_URL are runtime container env, not image build args.
+                    # celery_app.py reads them at import, so the smoke test supplies throwaway values.
                     docker run --rm --platform linux/amd64 \
                       --volume "$WORKSPACE:/workspace:ro" --workdir /workspace \
                       --env PYTHONDONTWRITEBYTECODE=1 \
                       --env PIP_DISABLE_PIP_VERSION_CHECK=1 --env "PIP_INDEX_URL=$PYPI_INDEX_URL" \
+                      --env REGION=ci \
+                      --env CELERY_BROKER_URL=mongodb://localhost/storagent_celery \
                       "$TEST_IMAGE" bash -c '
                         set -Eeuo pipefail
                         python -m pip install --no-cache-dir -r worker/storagent-celery/requirements.txt
@@ -94,8 +98,6 @@ pipeline {
                         mkdir -p /tmp/syntax-check
                         cp -a worker/storagent-celery backend/storagent /tmp/syntax-check/
                         python -m compileall -q /tmp/syntax-check/storagent-celery /tmp/syntax-check/storagent/src
-                        REGION=beijing \
-                        CELERY_BROKER_URL=mongodb://localhost/storagent_celery \
                         PYTHONPATH=/workspace/worker/storagent-celery:/workspace/backend/storagent \
                         python -c \
                           "from celery_app import app; assert app.conf.task_track_started; assert app.conf.broker_transport_options[\"messages_collection\"] == \"celery.messages\""
