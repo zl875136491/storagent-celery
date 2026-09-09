@@ -229,10 +229,38 @@ def _ensure_indexes() -> None:
     return
 
 
+def _enqueue_authority_quota_bootstrap() -> None:
+  """Queue a quota aggregate refresh as soon as the authority Worker is ready.
+
+  Compact multipart/init fail-closes until Etcd has quota/admission/apps/*
+  records. Beat only fires after APPLICATION_QUOTA_AGGREGATE_INTERVAL_SECONDS,
+  so a fresh deploy would otherwise reject uploads for up to an hour.
+  Existing applications are not seeded on API startup; only newly enabled
+  applications call seed_application_quota_aggregate.
+  """
+  try:
+    from celery_app import app, authority_region, protocol_version, region, worker_queue
+    from src.core.celery_routing import task_headers
+  except Exception:
+    return
+  if region != authority_region:
+    return
+  try:
+    app.send_task(
+      "storagent.public.refresh_quota_aggregates",
+      queue=worker_queue,
+      routing_key=worker_queue,
+      headers=task_headers(region, protocol_version=protocol_version),
+    )
+  except Exception:
+    return
+
+
 @signals.worker_ready.connect
 def worker_ready(**_kwargs) -> None:
   _ensure_indexes()
   _touch_worker()
+  _enqueue_authority_quota_bootstrap()
 
 
 @signals.heartbeat_sent.connect

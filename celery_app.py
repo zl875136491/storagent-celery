@@ -37,15 +37,25 @@ def _as_bool(name: str, default: bool) -> bool:
   return value in {"1", "true", "yes", "on"}
 
 
-def _schedule_entry(task: str, interval_env: str, default_interval: float) -> dict:
+def _schedule_entry(
+  task: str,
+  interval_env: str,
+  default_interval: float,
+  *,
+  expire_with_interval: bool = False,
+) -> dict:
+  interval = float(os.getenv(interval_env, str(default_interval)))
+  options = {
+    "queue": worker_queue,
+    "routing_key": worker_queue,
+    "headers": task_headers(region, protocol_version=protocol_version),
+  }
+  if expire_with_interval:
+    options["expires"] = max(interval, 5.0)
   return {
     "task": task,
-    "schedule": float(os.getenv(interval_env, str(default_interval))),
-    "options": {
-      "queue": worker_queue,
-      "routing_key": worker_queue,
-      "headers": task_headers(region, protocol_version=protocol_version),
-    },
+    "schedule": interval,
+    "options": options,
   }
 
 
@@ -69,6 +79,7 @@ beat_schedule = {
   ),
   "storagent.etcd-reconcile": _schedule_entry(
     "storagent.etcd.reconcile", "SYNC_RECONCILE_INTERVAL_SECONDS", 30,
+    expire_with_interval=True,
   ),
   "storagent.recover-queued-maintenance": _schedule_entry(
     "storagent.maintenance.recover_queued_tasks", "CELERY_OPERATION_WATCHDOG_INTERVAL_SECONDS", 60,
