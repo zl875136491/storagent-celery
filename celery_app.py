@@ -78,7 +78,7 @@ beat_schedule = {
     "storagent.auth.cleanup_expired_tokens", "AUTH_CLEANUP_INTERVAL_SECONDS", 3600,
   ),
   "storagent.etcd-reconcile": _schedule_entry(
-    "storagent.etcd.reconcile", "SYNC_RECONCILE_INTERVAL_SECONDS", 30,
+    "storagent.etcd.reconcile", "SYNC_RECONCILE_INTERVAL_SECONDS", 120,
     expire_with_interval=True,
   ),
   "storagent.recover-queued-maintenance": _schedule_entry(
