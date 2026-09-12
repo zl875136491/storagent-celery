@@ -256,11 +256,21 @@ def _enqueue_authority_quota_bootstrap() -> None:
     return
 
 
+def _enqueue_file_inventory_bootstrap() -> None:
+  """Fill a missing object index after Worker start; skip if Mongo already has one."""
+  try:
+    from src.modules.storage.inventory_sync import enqueue_file_inventory_sync
+    enqueue_file_inventory_sync(trigger="bootstrap", actor="worker")
+  except Exception:
+    return
+
+
 @signals.worker_ready.connect
 def worker_ready(**_kwargs) -> None:
   _ensure_indexes()
   _touch_worker()
   _enqueue_authority_quota_bootstrap()
+  _enqueue_file_inventory_bootstrap()
 
 
 @signals.heartbeat_sent.connect

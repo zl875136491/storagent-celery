@@ -81,6 +81,10 @@ beat_schedule = {
     "storagent.etcd.reconcile", "SYNC_RECONCILE_INTERVAL_SECONDS", 120,
     expire_with_interval=True,
   ),
+  "storagent.file-inventory-sync": _schedule_entry(
+    "storagent.storage.sync_file_inventory", "FILE_INVENTORY_SYNC_INTERVAL_SECONDS", 21600,
+    expire_with_interval=True,
+  ),
   "storagent.recover-queued-maintenance": _schedule_entry(
     "storagent.maintenance.recover_queued_tasks", "CELERY_OPERATION_WATCHDOG_INTERVAL_SECONDS", 60,
   ),

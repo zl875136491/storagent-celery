@@ -67,6 +67,14 @@ def reconcile_etcd(self):
   return _run(reconcile_etcd_once())
 
 
+@app.task(bind=True, name="storagent.storage.sync_file_inventory", **_MANUAL_TASK_OPTIONS)
+def sync_file_inventory(self, trigger: str = "beat", actor: str = ""):
+  require_task_origin(self)
+  task_id = str(getattr(getattr(self, "request", None), "id", "") or "")
+  from src.modules.storage.inventory_sync import sync_file_inventory_once
+  return _run(sync_file_inventory_once(trigger=trigger, actor=actor, task_id=task_id))
+
+
 @app.task(bind=True, name="storagent.replication.reconcile_policies", **_PERIODIC_TASK_OPTIONS)
 def reconcile_replication_policies(self):
   require_task_origin(self)
