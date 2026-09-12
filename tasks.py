@@ -137,13 +137,20 @@ def recover_queued_tasks(self):
   require_task_origin(self)
 
   async def recover():
+    from src.modules.celery.service import recover_stale_task_history_once
     from src.modules.etcd.service import recover_stale_tasks_once
     from src.modules.storage.operations import recover_stale_storage_operations_once
 
-    storage, etcd = await asyncio.gather(
+    storage, etcd, history = await asyncio.gather(
       recover_stale_storage_operations_once(),
       recover_stale_tasks_once(),
+      recover_stale_task_history_once(),
     )
-    return {"storage": storage, "etcd": etcd}
+    return {
+      "storage": storage,
+      "etcd": etcd,
+      "history": history,
+      "history_timeout": int((history or {}).get("history_timeout") or 0),
+    }
 
   return _run(recover())

@@ -58,3 +58,5 @@ CAPACITY_SNAPSHOT_MAX_CONCURRENCY=3
 ```
 
 See `backend/docs/CELERY_OPERATIONS.md` in the coordinated source release for task ownership, retry behavior, and rollout/rollback steps. Do not replace only the Worker while an older Backend is still producing the legacy shared `celery` queue.
+
+On `worker_ready`, this process closes `STARTED`/`RETRY` history rows left by the previous process of the same Worker hostname. The periodic `storagent.maintenance.recover_queued_tasks` task also closes region-local history rows that exceeded `CELERY_OPERATION_RUNNING_TIMEOUT_SECONDS`. Both writes are observability-only.

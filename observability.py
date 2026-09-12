@@ -25,7 +25,7 @@ _heartbeats = None
 _SAFE_RESULT_KEYS = frozenset({
   "status", "operation_id", "task_id", "processed", "succeeded", "failed",
   "skipped", "candidates", "archived", "queued_timeout", "running_timeout",
-  "already_running", "recovery_required", "deferred",
+  "already_running", "recovery_required", "deferred", "history_timeout",
 })
 _SENSITIVE_VALUE_RE = re.compile(
   r"(?i)(api[_-]?key|access[_-]?key|secret|token|password|authorization)"
@@ -265,9 +265,52 @@ def _enqueue_file_inventory_bootstrap() -> None:
     return
 
 
+def _close_orphaned_in_progress(reason: str) -> None:
+  """End STARTED/RETRY rows left by a previous process of this Worker hostname."""
+  now = _now()
+  _client, history, _heartbeats = _collections()
+  query = {"worker": _worker_name(), "status": {"$in": ["STARTED", "RETRY"]}}
+  for doc in history.find(query).limit(500):
+    task_id = str(doc.get("task_id") or "").strip()
+    if not task_id:
+      continue
+    previous = str(doc.get("error") or "").strip()
+    error = f"{previous}；{reason}" if previous else reason
+    started_at = doc.get("started_at")
+    duration_ms = None
+    if isinstance(started_at, datetime):
+      if started_at.tzinfo is None:
+        started_at = started_at.replace(tzinfo=timezone.utc)
+      duration_ms = max(int((now - started_at).total_seconds() * 1000), 0)
+    history.update_one(
+      {"task_id": task_id, "status": {"$in": ["STARTED", "RETRY"]}},
+      {
+        "$set": {
+          "status": "FAILURE",
+          "error": _redact(error, limit=500),
+          "error_summary_version": 2,
+          "finished_at": now,
+          "updated_at": now,
+          "duration_ms": duration_ms,
+          "result_summary": json.dumps(
+            {"recovery_required": True},
+            ensure_ascii=False,
+            separators=(",", ":"),
+          ),
+          "result_summary_version": 2,
+          "expires_at": _expires_at(now, "CELERY_TASK_HISTORY_RETENTION_DAYS", 30),
+        },
+      },
+    )
+
+
 @signals.worker_ready.connect
 def worker_ready(**_kwargs) -> None:
   _ensure_indexes()
+  try:
+    _close_orphaned_in_progress("Worker 进程已重启，任务未收到结束回调")
+  except Exception:
+    pass
   _touch_worker()
   _enqueue_authority_quota_bootstrap()
   _enqueue_file_inventory_bootstrap()
